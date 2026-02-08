@@ -1,6 +1,6 @@
 /**
- * Sparkle Trail on Cursor
- * Signature visual — soft sparkles follow the cursor.
+ * Sparkle Trail on Cursor — Pastel Edition
+ * Soft pastel four-pointed stars with glow that drift and fade.
  */
 
 const canvas = document.getElementById('sparkle-canvas');
@@ -11,34 +11,37 @@ let mouseX = 0;
 let mouseY = 0;
 let animFrame = null;
 
+// Pastel sparkle colors matching the dreamy pixel art bg
 const SPARKLE_COLORS = [
-  'rgba(212, 200, 239, ',  // lavender
-  'rgba(232, 192, 212, ',  // pink
-  'rgba(123, 196, 184, ',  // teal
-  'rgba(232, 224, 240, ',  // warm white
+  'rgba(236, 190, 212, ',  // pink
+  'rgba(200, 184, 224, ',  // lavender
+  'rgba(168, 180, 216, ',  // periwinkle
+  'rgba(160, 216, 196, ',  // mint
+  'rgba(255, 220, 230, ',  // soft rose
+  'rgba(255, 248, 252, ',  // cream white
 ];
 
 class Sparkle {
   constructor(x, y) {
-    this.x = x + (Math.random() - 0.5) * 10;
-    this.y = y + (Math.random() - 0.5) * 10;
-    this.size = Math.random() * 3 + 1;
-    this.speedX = (Math.random() - 0.5) * 1.5;
-    this.speedY = (Math.random() - 0.5) * 1.5 - 0.5;
+    this.x = x + (Math.random() - 0.5) * 12;
+    this.y = y + (Math.random() - 0.5) * 12;
+    this.size = Math.random() * 3.5 + 1.5;
+    this.speedX = (Math.random() - 0.5) * 1.2;
+    this.speedY = (Math.random() - 0.5) * 1.2 - 0.4;
     this.life = 1;
-    this.decay = Math.random() * 0.02 + 0.015;
+    this.decay = Math.random() * 0.018 + 0.012;
     this.color = SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)];
     this.rotation = Math.random() * Math.PI * 2;
-    this.rotSpeed = (Math.random() - 0.5) * 0.1;
+    this.rotSpeed = (Math.random() - 0.5) * 0.08;
   }
 
   update() {
     this.x += this.speedX;
     this.y += this.speedY;
-    this.speedY += 0.02; // gentle gravity
+    this.speedY += 0.015; // very gentle gravity
     this.life -= this.decay;
     this.rotation += this.rotSpeed;
-    this.size *= 0.99;
+    this.size *= 0.995;
   }
 
   draw() {
@@ -47,19 +50,26 @@ class Sparkle {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
-    ctx.globalAlpha = this.life;
+    ctx.globalAlpha = this.life * 0.8;
 
-    // Draw a four-pointed star
     const s = this.size;
+
+    // Soft glow behind the star
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 3);
+    glow.addColorStop(0, this.color + `${this.life * 0.25})`);
+    glow.addColorStop(1, this.color + '0)');
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 3, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // Four-pointed star with curved edges
     ctx.beginPath();
     ctx.moveTo(0, -s * 2);
-    ctx.lineTo(s * 0.4, -s * 0.4);
-    ctx.lineTo(s * 2, 0);
-    ctx.lineTo(s * 0.4, s * 0.4);
-    ctx.lineTo(0, s * 2);
-    ctx.lineTo(-s * 0.4, s * 0.4);
-    ctx.lineTo(-s * 2, 0);
-    ctx.lineTo(-s * 0.4, -s * 0.4);
+    ctx.quadraticCurveTo(s * 0.3, -s * 0.3, s * 2, 0);
+    ctx.quadraticCurveTo(s * 0.3, s * 0.3, 0, s * 2);
+    ctx.quadraticCurveTo(-s * 0.3, s * 0.3, -s * 2, 0);
+    ctx.quadraticCurveTo(-s * 0.3, -s * 0.3, 0, -s * 2);
     ctx.closePath();
 
     ctx.fillStyle = this.color + `${this.life})`;
@@ -74,7 +84,7 @@ class Sparkle {
 }
 
 let lastSpawn = 0;
-const SPAWN_INTERVAL = 50; // ms between spawns
+const SPAWN_INTERVAL = 45;
 
 function resizeCanvas() {
   if (!canvas) return;
@@ -87,16 +97,14 @@ function animate(timestamp) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Spawn new sparkles
   if (timestamp - lastSpawn > SPAWN_INTERVAL) {
     sparkles.push(new Sparkle(mouseX, mouseY));
-    if (Math.random() > 0.5) {
+    if (Math.random() > 0.4) {
       sparkles.push(new Sparkle(mouseX, mouseY));
     }
     lastSpawn = timestamp;
   }
 
-  // Update and draw
   for (let i = sparkles.length - 1; i >= 0; i--) {
     sparkles[i].update();
     sparkles[i].draw();
@@ -105,9 +113,8 @@ function animate(timestamp) {
     }
   }
 
-  // Cap sparkle count
-  if (sparkles.length > 80) {
-    sparkles = sparkles.slice(-60);
+  if (sparkles.length > 100) {
+    sparkles = sparkles.slice(-80);
   }
 
   animFrame = requestAnimationFrame(animate);
