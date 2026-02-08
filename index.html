@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observer.os</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "dexie": "https://cdn.jsdelivr.net/npm/dexie@4.0.4/dist/dexie.min.mjs"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Ambient Background Layer -->
+  <div id="ambient-bg">
+    <canvas id="ambient-canvas"></canvas>
+  </div>
+
+  <!-- Sparkle Cursor Canvas -->
+  <canvas id="sparkle-canvas"></canvas>
+
+  <!-- Desktop Surface -->
+  <div id="desktop">
+    <!-- Windows render here dynamically -->
+  </div>
+
+  <!-- Relational Time Widget -->
+  <div id="time-widget">
+    <div id="time-relational"></div>
+    <div id="time-clock"></div>
+  </div>
+
+  <!-- Taskbar -->
+  <div id="taskbar">
+    <div id="taskbar-start">
+      <button id="start-btn" title="Observer.os">
+        <span class="start-icon">✦</span>
+        <span class="start-label">Observer</span>
+      </button>
+    </div>
+    <div id="taskbar-apps">
+      <button class="taskbar-app" data-app="checkin" title="Check-In.exe">
+        <span class="app-icon">🌙</span>
+        <span class="app-label">Check-In</span>
+      </button>
+      <button class="taskbar-app" data-app="editor" title="Editor.exe">
+        <span class="app-icon">✎</span>
+        <span class="app-label">Editor</span>
+      </button>
+      <button class="taskbar-app" data-app="queue" title="Queue.exe">
+        <span class="app-icon">♫</span>
+        <span class="app-label">Queue</span>
+      </button>
+      <button class="taskbar-app" data-app="tasks" title="Tasks.exe">
+        <span class="app-icon">◻</span>
+        <span class="app-label">Tasks</span>
+      </button>
+      <button class="taskbar-app" data-app="buddy" title="Buddy.exe">
+        <span class="app-icon">❋</span>
+        <span class="app-label">Buddy</span>
+      </button>
+      <button class="taskbar-app" data-app="reflect" title="Reflect.exe">
+        <span class="app-icon">◈</span>
+        <span class="app-label">Reflect</span>
+      </button>
+      <button class="taskbar-app" data-app="notes" title="Notes.exe">
+        <span class="app-icon">▤</span>
+        <span class="app-label">Notes</span>
+      </button>
+      <button class="taskbar-app" data-app="sounds" title="Sounds.exe">
+        <span class="app-icon">♪</span>
+        <span class="app-label">Sounds</span>
+      </button>
+    </div>
+    <div id="taskbar-tray">
+      <div id="tray-phase" title="Current evening phase"></div>
+      <div id="tray-cycle" title="Cycle day"></div>
+      <div id="tray-clock"></div>
+    </div>
+  </div>
+
+  <!-- Window Templates -->
+  <template id="window-template">
+    <div class="os-window" tabindex="-1">
+      <div class="window-titlebar">
+        <div class="window-title">
+          <span class="window-icon"></span>
+          <span class="window-name"></span>
+        </div>
+        <div class="window-controls">
+          <button class="win-btn win-minimize" title="Minimize">─</button>
+          <button class="win-btn win-maximize" title="Maximize">□</button>
+          <button class="win-btn win-close" title="Close">×</button>
+        </div>
+      </div>
+      <div class="window-body"></div>
+    </div>
+  </template>
+
+  <!-- Check-In Content -->
+  <template id="checkin-content">
+    <div class="checkin-flow">
+      <div class="checkin-progress">
+        <div class="checkin-progress-fill"></div>
+        <div class="checkin-progress-dots">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <!-- Step 1: Arrival -->
+      <div class="checkin-step" data-step="arrival">
+        <div class="checkin-greeting"></div>
+        <div class="checkin-fields">
+          <div class="field-group">
+            <label>Energy</label>
+            <div class="pill-select" data-field="energy">
+              <button class="pill" data-value="very-low">very low</button>
+              <button class="pill" data-value="low">low</button>
+              <button class="pill" data-value="moderate">moderate</button>
+              <button class="pill" data-value="good">good</button>
+              <button class="pill" data-value="high">high</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Overstimulation</label>
+            <div class="pill-select" data-field="overstimulation">
+              <button class="pill" data-value="calm">calm</button>
+              <button class="pill" data-value="slightly-buzzy">slightly buzzy</button>
+              <button class="pill" data-value="overstimulated">overstimulated</button>
+              <button class="pill" data-value="overloaded">overloaded</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Mood — a word, a phrase, whatever comes</label>
+            <input type="text" class="mood-input" data-field="mood" placeholder="tired, okay, weird, heavy..." autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Body Check -->
+      <div class="checkin-step" data-step="body" style="display:none">
+        <div class="checkin-prompt">What is your body telling you?</div>
+        <div class="checkin-fields">
+          <div class="field-group">
+            <label>Medication today?</label>
+            <div class="pill-select" data-field="medication">
+              <button class="pill" data-value="yes">yes</button>
+              <button class="pill" data-value="no">no</button>
+              <button class="pill" data-value="partial">partial</button>
+              <button class="pill" data-value="na">n/a</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Currently bleeding?</label>
+            <div class="pill-select" data-field="bleeding">
+              <button class="pill" data-value="yes">yes</button>
+              <button class="pill" data-value="no">no</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Anything else your body is saying?</label>
+            <textarea class="body-notes" data-field="bodyNotes" rows="3" placeholder="headache, cramps, restlessness, hunger..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Brain Dump -->
+      <div class="checkin-step" data-step="braindump" style="display:none">
+        <div class="checkin-prompt">Is there anything from today that needs a place to land?</div>
+        <div class="checkin-fields">
+          <textarea class="braindump-input" data-field="brainDump" rows="5" placeholder="Whatever's in your head. It doesn't have to make sense."></textarea>
+          <div class="field-group avoided-group">
+            <label>Anything you've been avoiding?</label>
+            <textarea class="avoided-input" data-field="avoided" rows="2" placeholder="Optional — these will be held gently."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Evening Intention -->
+      <div class="checkin-step" data-step="intention" style="display:none">
+        <div class="checkin-prompt">What do you want your evening to look like?</div>
+        <div class="checkin-fields">
+          <div class="intention-options">
+            <div class="intention-suggestions" id="intention-suggestions">
+              <!-- Populated dynamically from Queue -->
+            </div>
+            <div class="field-group">
+              <label>Or just say it</label>
+              <input type="text" class="intention-input" data-field="intention" placeholder="just gonna rest, calling a friend, working on a project..." autocomplete="off">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Summary -->
+      <div class="checkin-step" data-step="summary" style="display:none">
+        <div class="checkin-prompt">You're checked in. Here's the evening as you've set it up:</div>
+        <div class="checkin-summary" id="checkin-summary">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="checkin-nav">
+        <button class="checkin-btn checkin-back" style="visibility:hidden">back</button>
+        <button class="checkin-btn checkin-next">continue</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Editor Content -->
+  <template id="editor-content">
+    <div class="editor-container">
+      <div class="editor-toolbar">
+        <span class="editor-date" id="editor-date"></span>
+        <span class="editor-wordcount" id="editor-wordcount">0 words</span>
+        <button class="editor-prompt-btn" title="Inspire me">✦</button>
+      </div>
+      <div class="editor-writing" contenteditable="true" id="editor-area" spellcheck="true" data-placeholder="A beautiful empty page, waiting."></div>
+      <div class="editor-entries-list" id="editor-entries-list">
+        <!-- Past entries appear here -->
+      </div>
+    </div>
+  </template>
+
+  <!-- Buddy Content -->
+  <template id="buddy-content">
+    <div class="buddy-container">
+      <div class="buddy-avatar" id="buddy-avatar">
+        <pre class="buddy-art" id="buddy-art"></pre>
+      </div>
+      <div class="buddy-status" id="buddy-status">Just vibing...</div>
+    </div>
+  </template>
+
+  <!-- Queue Content -->
+  <template id="queue-content">
+    <div class="queue-container">
+      <div class="queue-toolbar">
+        <button class="queue-add-btn" id="queue-add-btn">+ add to queue</button>
+        <div class="queue-filters">
+          <select id="queue-type-filter">
+            <option value="all">all types</option>
+            <option value="show">shows</option>
+            <option value="movie">movies</option>
+            <option value="anime">anime</option>
+            <option value="game">games</option>
+            <option value="book">books</option>
+            <option value="manga">manga</option>
+            <option value="music">music</option>
+            <option value="podcast">podcasts</option>
+            <option value="activity">activities</option>
+          </select>
+          <select id="queue-status-filter">
+            <option value="all">all</option>
+            <option value="want">want</option>
+            <option value="in-progress">in progress</option>
+            <option value="completed">completed</option>
+            <option value="dropped">dropped</option>
+          </select>
+        </div>
+      </div>
+      <div class="queue-list" id="queue-list"></div>
+
+      <!-- Add/Edit Form (hidden by default) -->
+      <div class="queue-form" id="queue-form" style="display:none">
+        <div class="queue-form-title">Add to Queue</div>
+        <input type="hidden" id="queue-edit-id">
+        <div class="field-group">
+          <label>Title</label>
+          <input type="text" id="queue-item-title" placeholder="What are you adding?">
+        </div>
+        <div class="field-group">
+          <label>Type</label>
+          <div class="pill-select" data-field="queue-type">
+            <button class="pill" data-value="show">show</button>
+            <button class="pill" data-value="movie">movie</button>
+            <button class="pill" data-value="anime">anime</button>
+            <button class="pill" data-value="game">game</button>
+            <button class="pill" data-value="book">book</button>
+            <button class="pill" data-value="manga">manga</button>
+            <button class="pill" data-value="music">music</button>
+            <button class="pill" data-value="podcast">podcast</button>
+            <button class="pill" data-value="activity">activity</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Energy cost</label>
+          <div class="pill-select" data-field="queue-energy">
+            <button class="pill" data-value="low">low</button>
+            <button class="pill" data-value="medium">medium</button>
+            <button class="pill" data-value="high">high</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Stimulation level</label>
+          <div class="pill-select" data-field="queue-stimulation">
+            <button class="pill" data-value="calm">calm</button>
+            <button class="pill" data-value="moderate">moderate</button>
+            <button class="pill" data-value="stimulating">stimulating</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Mood fit (select any that apply)</label>
+          <div class="pill-select multi" data-field="queue-mood">
+            <button class="pill" data-value="cozy">cozy</button>
+            <button class="pill" data-value="intense">intense</button>
+            <button class="pill" data-value="brain-off">brain-off</button>
+            <button class="pill" data-value="emotional">emotional</button>
+            <button class="pill" data-value="funny">funny</button>
+            <button class="pill" data-value="adventurous">adventurous</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Time commitment</label>
+          <div class="pill-select" data-field="queue-time">
+            <button class="pill" data-value="short">short</button>
+            <button class="pill" data-value="medium">medium</button>
+            <button class="pill" data-value="long">long</button>
+            <button class="pill" data-value="open-ended">open-ended</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Notes</label>
+          <textarea id="queue-item-notes" rows="2" placeholder="Any notes..."></textarea>
+        </div>
+        <div class="queue-form-actions">
+          <button class="checkin-btn" id="queue-save-btn">save</button>
+          <button class="checkin-btn checkin-back" id="queue-cancel-btn">cancel</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Tasks Content -->
+  <template id="tasks-content">
+    <div class="tasks-container">
+      <div class="tasks-toolbar">
+        <button class="queue-add-btn" id="task-add-btn">+ add task</button>
+      </div>
+      <div class="tasks-surfaced" id="tasks-surfaced" style="display:none">
+        <div class="surfaced-prompt"></div>
+        <div class="surfaced-actions">
+          <button class="pill" data-action="deal">deal with it today</button>
+          <button class="pill" data-action="help">ask for help</button>
+          <button class="pill" data-action="later">not right now</button>
+        </div>
+      </div>
+      <div class="tasks-list" id="tasks-list"></div>
+      <div class="task-input-area" id="task-input-area" style="display:none">
+        <input type="text" id="task-input" placeholder="What needs acknowledging?">
+        <button class="checkin-btn" id="task-save-btn">save</button>
+      </div>
+      <!-- Help Script Modal -->
+      <div class="help-script-modal" id="help-script-modal" style="display:none">
+        <div class="help-script-title">Ask for support</div>
+        <textarea id="help-script-text" rows="6"></textarea>
+        <div class="help-script-actions">
+          <button class="checkin-btn" id="help-copy-btn">copy message</button>
+          <button class="checkin-btn checkin-back" id="help-close-btn">close</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Reflect Content -->
+  <template id="reflect-content">
+    <div class="reflect-container">
+      <div class="reflect-period-tabs">
+        <button class="pill active" data-period="week">this week</button>
+        <button class="pill" data-period="cycle">this cycle</button>
+        <button class="pill" data-period="month">recent patterns</button>
+      </div>
+      <div class="reflect-observations" id="reflect-observations">
+        <div class="reflect-loading">Gathering observations...</div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Notes Content -->
+  <template id="notes-content">
+    <div class="notes-container">
+      <textarea class="notes-area" id="notes-area" placeholder="Quick capture — whatever needs a place."></textarea>
+      <div class="notes-saved" id="notes-saved"></div>
+    </div>
+  </template>
+
+  <!-- Sounds Content -->
+  <template id="sounds-content">
+    <div class="sounds-container">
+      <div class="sounds-header">Ambient Sounds</div>
+      <div class="sounds-grid">
+        <button class="sound-btn" data-sound="rain">🌧 rain</button>
+        <button class="sound-btn" data-sound="fire">🔥 fireplace</button>
+        <button class="sound-btn" data-sound="wind">🍃 wind</button>
+        <button class="sound-btn" data-sound="waves">🌊 waves</button>
+        <button class="sound-btn" data-sound="night">🦗 night</button>
+        <button class="sound-btn" data-sound="cafe">☕ café</button>
+      </div>
+      <div class="sounds-note">Connect your preferred ambient sound service or add URLs in settings.</div>
+    </div>
+  </template>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
